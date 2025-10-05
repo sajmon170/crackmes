@@ -1,8 +1,11 @@
-# Static analysis
+# Good kitty
+Solution to https://crackmes.one/crackme/68c44e20224c0ec5dcedbf4b
+
+## Static analysis
 Static analysis of the decompiled code with Ghidra reveals that the program
 is structured into the following parts
 
-## 1. Initial password computation
+### 1. Initial password computation
 ```c
   local_20 = *(long *)(in_FS_OFFSET + 0x28);
   correct_passwd = (char  [8])get_largest_prime_factor();
@@ -11,7 +14,7 @@ is structured into the following parts
   acVar1 = (char  [8])factorial(correct_passwd);
 ```
 
-## 2. Password encryption
+### 2. Password encryption
 ```c
   loop_ctr = 0;
   do {
@@ -32,10 +35,10 @@ is structured into the following parts
   } while (loop_ctr != 8);
 ```
 
-## 3. User I/O
+### 3. User I/O
 This includes all the `write` and `read` calls
 
-## 4. Password comparison
+### 4. Password comparison
 ```c
   is_pass_correct = 1;
   passwd_idx = 0;
@@ -58,8 +61,8 @@ This includes all the `write` and `read` calls
 ```
 That `do..while` loop is clearly a string comparison function.
 
-# Dynamic analysis
-## Setting the correct breakpoint
+## Dynamic analysis
+### Setting the correct breakpoint
 Since the correct password is stored inside the `correct_passwd` variable all
 we have to do is read it after the encryption step is done.
 
@@ -76,7 +79,7 @@ to instruction offset `main + 0x12b`
 > We don't need to concern ourselves with how the encryption is actually done,
 > nor with what the functions from the first static analysis step compute.
 
-## Reading the correct value
+### Reading the correct value
 Now we need to read the actual computed and encrypted password string. Let's
 select some line from the encryption code that uses the `correct_passwd`
 variable.
@@ -94,7 +97,7 @@ corresponds to the following assembly code:
 We can infer from the addressing mode that the password string variable begins
 at address `$RSP + 0x10`.
 
-## Putting it all together
+### Putting it all together
 The script `solution.gdb` contains GDB instructions for returning the password.
 Running it with 
 
