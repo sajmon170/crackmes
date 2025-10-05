@@ -66,7 +66,7 @@ we have to do is read it after the encryption step is done.
 ```c
   } while (loop_ctr != 8);
   _message_str = 0x6874207265746e65;
-  iVar2 = 0; // <- We're setting the breakpoint here"
+  iVar2 = 0; // <- We're setting the breakpoint here
 ```
 
 Inspecting the dissassembly of that line in Ghidra we find that it corresponds
