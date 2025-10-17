@@ -83,3 +83,39 @@ Therefore, we need a way to write to `switch_var`.
 We can't do a buffer overflow since the call to `fgets` limits us to at most
 `0x100` read characters. However, the `printf` call processes unsanitized user
 input!
+
+#### Variadic arguments
+The `printf` function is declared as follows:
+
+```c
+int printf(const char *restrict format, ...);
+```
+
+The `...` ellipsis signify that this is a variadic argument function.
+Its arguments must be processed through the `va_args` macros. In particular -
+the `va_start` macro sets the argument pointer to point to the first unnamed
+argument (i.e. - the first argument passed after `format`).
+
+The `format` string specifies how many arguments `printf` needs to read. However,
+passing the correct argument count isn't actually required since the processing
+is fully done at runtime. So what happens then?
+
+We know that this program is an x86\_64 ELF binary. The `file` command confirms
+that it follows the System V ABI:
+
+```
+$ file revenge
+revenge: ELF 64-bit LSB executable, x86-64, version 1 (SYSV)
+```
+
+According to the Sys-V ABI function calls need to pass the first 6 arguments
+through the `rdi`, `rsi`, `rdx`, `rcx`, `r8`, and `r9` registers. All other
+arguments are passed through the stack.
+
+When `va_start` is invoked on a function without the correct number of arguments
+the argument pointer will point to the end of the `printf` callee's stack memory.
+This allows us to read its contents!
+
+We also know that the last variable declared on the `stage0` call frame is the
+`user_string_buffer`. Therefore, the `printf` arguments will be read directly
+from that buffer.
