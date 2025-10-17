@@ -153,6 +153,13 @@ We can move the AP once more to get to the final result:
                 🡩__ the AP points here
 ```
 
+Note that `0x70707070` is actually `0x0000000070707070` when written as a 64-bit
+address. However, everything turns out alright, because the array is filled with
+zeros after `pppp`. When `printf` reads the pointer for `%n` it takes the `pppp`
+value along with the remaining `\0\0\0\0` values next to it (remember that it
+needs to read 8 bytes). Since numbers are stored in little endian `pppp\0\0\0\0`
+is a valid representation for the `0x70707070` pointer. Our job is now done.
+
 > [!NOTE]
 > We can overwrite the memory at address `0x70707070` by passing in
 > `%x%x%x%x%x%x%x%npppp` as an input to the `fgets` call.
