@@ -117,5 +117,43 @@ the argument pointer will point to the end of the `printf` callee's stack memory
 This allows us to read its contents!
 
 We also know that the last variable declared on the `stage0` call frame is the
-`user_string_buffer`. Therefore, the `printf` arguments will be read directly
-from that buffer.
+`user_string_buffer`. Therefore, the missing `printf` arguments will be read
+directly from that buffer.
+
+#### Format string exploit outline
+1. We need to write to `0x70707070`. Since `0x70` is the ASCII code for `p` we
+can store it in the `user_string_buffer` by providing a `pppp` input
+2. We now have the output address, but we need a way to write to it. Luckily
+`printf` provides a `%n` conversion specifier for writing the number of
+previously written chars into some variable passed as a pointer argument
+3. We have both the pointer and a way to write to it. Now we have to actually
+pass it as an argument. Since its stored in the `user_string_buffer` we need to
+advance the `printf` argument pointer to point to it. We can use any output
+specifier for that, but we will use `%x` since it gives us a hexadecimal view of
+the stack memory.
+4. We need to determine by how much the argument pointer needs to be advanced.
+The format string itself is passed in a register, and there are 5 registers left
+for arguments according to the Sys-V ABI. We need to read from the stack,
+therefore, we need 5 consecutive `%x` specifiers to skip those registers and to
+force `printf` to start reading values from the stack instead.
+```c
+%x%x%x%x%x%npppp
+🡩_ the argument pointer points here
+```
+This is how the current format string looks like. However, this will not work,
+since the argument pointer points to its beginning and not to the `pppp` address.
+Each output specifier advances the argument pointer by 8 bytes because of 64-bit
+addressing. Adding another `%x` moves the argument pointer like so:
+```c
+%x%x%x%x%x%x%npppp
+        🡩_ the argument pointer points here
+```
+We can move the argument pointer once more to get to the final result:
+```c
+%x%x%x%x%x%x%x%npppp
+                🡩_ the argument pointer points here
+```
+
+> [!NOTE]
+> We can overwrite the memory at address `0x70707070` by passing in
+> `%x%x%x%x%x%x%x%npppp` as an input to the `fgets` call
